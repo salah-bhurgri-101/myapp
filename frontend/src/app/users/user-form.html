@@ -1,0 +1,59 @@
+<section class="card card-narrow">
+  <div class="card-header">
+    <h1>{{ isEdit() ? 'Edit user' : 'Add user' }}</h1>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-error" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <p class="muted center">Loading user…</p>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="field">
+        <label for="name">Name</label>
+        <input id="name" type="text" formControlName="name" autocomplete="off"
+               [class.invalid]="name.invalid && name.touched" />
+        @if (name.touched && name.errors) {
+          <small class="error">
+            @if (name.errors['required']) { Name is required. }
+            @else if (name.errors['maxlength']) { Name must be at most 191 characters. }
+          </small>
+        }
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" formControlName="email" autocomplete="off"
+               [class.invalid]="email.invalid && email.touched" />
+        @if (email.touched && email.errors) {
+          <small class="error">
+            @if (email.errors['required']) { Email is required. }
+            @else if (email.errors['email']) { Enter a valid email address. }
+            @else if (email.errors['maxlength']) { Email must be at most 191 characters. }
+          </small>
+        }
+      </div>
+
+      <div class="field">
+        <label for="age">Age <span class="muted">(optional)</span></label>
+        <input id="age" type="number" formControlName="age" min="0" max="150"
+               [class.invalid]="age.invalid && age.touched" />
+        @if (age.touched && age.errors) {
+          <small class="error">
+            @if (age.errors['min'] || age.errors['max']) { Age must be between 0 and 150. }
+            @else if (age.errors['integer']) { Age must be a whole number. }
+          </small>
+        }
+      </div>
+
+      <div class="form-actions">
+        <a routerLink="/users" class="btn">Cancel</a>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          {{ saving() ? 'Saving…' : isEdit() ? 'Save changes' : 'Create user' }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

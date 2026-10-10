@@ -1,0 +1,88 @@
+<section class="card">
+  <div class="card-header">
+    <div>
+      <h1>Users</h1>
+      <p class="muted">{{ total() }} {{ total() === 1 ? 'user' : 'users' }} in total</p>
+    </div>
+    <a routerLink="/users/new" class="btn btn-primary">+ Add user</a>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-error" role="alert">
+      <span>{{ error() }}</span>
+      <button type="button" class="btn btn-link" (click)="load()">Retry</button>
+    </div>
+  }
+
+  @if (loading()) {
+    <p class="muted center">Loading users…</p>
+  } @else if (users().length === 0 && !error()) {
+    <div class="empty">
+      <p>No users yet.</p>
+      <a routerLink="/users/new" class="btn btn-primary">Create the first user</a>
+    </div>
+  } @else if (users().length > 0) {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Age</th>
+            <th>Created</th>
+            <th class="actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of users(); track user.id) {
+            <tr>
+              <td>{{ user.id }}</td>
+              <td>{{ user.name }}</td>
+              <td>{{ user.email }}</td>
+              <td>{{ user.age ?? '—' }}</td>
+              <td>{{ user.createdAt | date: 'mediumDate' }}</td>
+              <td class="actions-col">
+                <a [routerLink]="['/users', user.id, 'edit']" class="btn btn-small">Edit</a>
+                <button
+                  type="button"
+                  class="btn btn-small btn-danger"
+                  [disabled]="deletingId() === user.id"
+                  (click)="remove(user)"
+                >
+                  {{ deletingId() === user.id ? 'Deleting…' : 'Delete' }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <label class="muted">
+        Per page
+        <select #size [value]="limit()" (change)="changePageSize(size.value)">
+          @for (n of pageSizes; track n) {
+            <option [value]="n" [selected]="n === limit()">{{ n }}</option>
+          }
+        </select>
+      </label>
+
+      <div class="pager">
+        <button type="button" class="btn btn-small" [disabled]="page() <= 1" (click)="load(page() - 1)">
+          ← Prev
+        </button>
+        <span class="muted">Page {{ page() }} of {{ totalPages() }}</span>
+        <button
+          type="button"
+          class="btn btn-small"
+          [disabled]="page() >= totalPages()"
+          (click)="load(page() + 1)"
+        >
+          Next →
+        </button>
+      </div>
+    </div>
+  }
+</section>

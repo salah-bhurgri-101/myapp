@@ -1,0 +1,13 @@
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a routerLink="/users" class="brand">User Manager</a>
+    <nav>
+      <a routerLink="/users" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Users</a>
+      <a routerLink="/users/new" routerLinkActive="active">Add user</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <router-outlet />
+</main>

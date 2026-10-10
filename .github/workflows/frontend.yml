@@ -1,0 +1,60 @@
+name: Frontend (build and deploy)
+
+on:
+  push:
+    branches: [main]
+    paths: ["frontend/**", ".github/workflows/frontend.yml"]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: frontend-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint --if-present
+      # Add your unit-test command here if it runs headless in CI
+      - run: npx ng build --configuration production
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Upload to S3 and invalidate CloudFront
+        env:
+          BUCKET: ${{ vars.FRONTEND_BUCKET }}
+          DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          DIST="$(ls -d dist/*/browser | head -n1)"
+          echo "Deploying $DIST"
+
+          # 1) Hashed JS/CSS first: cache for a year
+          aws s3 sync "$DIST" "s3://$BUCKET" --delete \
+            --exclude "*" --include "*.js" --include "*.css" \
+            --cache-control "public,max-age=31536000,immutable"
+
+          # 2) Everything else (index.html, favicon, assets): always revalidate
+          aws s3 sync "$DIST" "s3://$BUCKET" --delete \
+            --exclude "*.js" --exclude "*.css" \
+            --cache-control "no-cache"
+
+          aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/*"
